@@ -1,5 +1,5 @@
 /-!
-# Endianness.Core
+# Binary.Core
 
 The **core layer** of the fixed-width endianness codec: byte strings are
 represented as `List Nat` with the side condition `IsBytes` (every element
@@ -17,7 +17,7 @@ defined here, together with proofs of all key properties:
 This file depends only on the Lean 4 core library — **no mathlib required**.
 -/
 
-namespace Endianness
+namespace Binary
 
 /-- A list of naturals is a valid byte string when every element is `< 256`. -/
 def IsBytes (bs : List Nat) : Prop := ∀ b ∈ bs, b < 256
@@ -190,4 +190,4 @@ theorem decodeBE_snoc (bs : List Nat) (b : Nat) :
     List.cons_append, List.nil_append, decodeLE]
   omega
 
-end Endianness
+end Binary

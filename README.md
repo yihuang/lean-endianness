@@ -1,4 +1,4 @@
-# Endianness — a Lean 4 big-endian / little-endian byte-order codec library
+# Binary — a Lean 4 big-endian / little-endian byte-order codec library
 
 Fixed-width endianness encoding/decoding with **machine-checked proofs** of all
 core properties. Written against the Lean 4 core library only — **no mathlib
@@ -10,11 +10,11 @@ dependency**.
 ## Project layout
 
 ```
-endianness/
+binary/
 ├── lakefile.toml
 ├── lean-toolchain
-├── Endianness.lean            # root module (re-exports everything)
-└── Endianness/
+├── Binary.lean            # root module (re-exports everything)
+└── Binary/
     ├── Core.lean              # List Nat byte strings: codecs + all core proofs
     ├── UInt8.lean             # List UInt8 interface + roundtrips
     ├── ByteArray.lean         # ByteArray runtime interface + roundtrips
@@ -39,7 +39,7 @@ encoded), so roundtrip theorems take `n < 256^len` as their hypothesis.
 
 ## Theorem index
 
-### Core layer (`Endianness.Core`)
+### Core layer (`Binary.Core`)
 
 | Theorem | Statement |
 |---|---|
@@ -55,7 +55,7 @@ encoded), so roundtrip theorems take `n < 256^len` as their hypothesis.
 | `encodeBE_succ` | `encodeBE (len+1) n = encodeBE len (n/256) ++ [n%256]` |
 | `decodeBE_snoc` | `decodeBE (bs ++ [b]) = decodeBE bs * 256 + b` |
 
-### UInt8 layer (`Endianness.UInt8`)
+### UInt8 layer (`Binary.UInt8`)
 
 `encodeLEU/encodeBEU : Nat → Nat → List UInt8`, `decodeLEU/decodeBEU : List UInt8 → Nat`.
 Roundtrips: `decodeLEU_encodeLEU`, `decodeBEU_encodeBEU`, `encodeLEU_decodeLEU`,
@@ -63,14 +63,14 @@ Roundtrips: `decodeLEU_encodeLEU`, `decodeBEU_encodeBEU`, `encodeLEU_decodeLEU`,
 length lemmas (`@[simp]`). Bridging: `UInt8.ofNat_toNat`,
 `uint8ToNats_natsToUInt8`, `natsToUInt8_uint8ToNats`.
 
-### ByteArray layer (`Endianness.ByteArray`)
+### ByteArray layer (`Binary.ByteArray`)
 
 `encodeLEBytes/encodeBEBytes : Nat → Nat → ByteArray`, `decodeLEBytes/decodeBEBytes : ByteArray → Nat`.
 Roundtrips: `decodeLEBytes_encodeLEBytes`, `decodeBEBytes_encodeBEBytes`,
 `encodeLEBytes_decodeLEBytes_size`, `encodeBEBytes_decodeBEBytes_size`;
 `size_encodeLEBytes` / `size_encodeBEBytes` (`@[simp]`).
 
-### Fixed layer (`Endianness.Fixed`)
+### Fixed layer (`Binary.Fixed`)
 
 For each `T ∈ {UInt16, UInt32, UInt64}` (width `k ∈ {2, 4, 8}`):
 
@@ -79,7 +79,7 @@ For each `T ∈ {UInt16, UInt32, UInt64}` (width `k ∈ {2, 4, 8}`):
 - `T.toBEBytes_ofBEBytes` / `T.toLEBytes_ofLEBytes`: encode after decode, given `bs.length = k`
 - `T.length_toBEBytes` / `T.length_toLEBytes` (`@[simp]`)
 
-### UInt256 (`Endianness.UInt256`)
+### UInt256 (`Binary.UInt256`)
 
 A 256-bit unsigned integer (EVM word size) wrapping `BitVec 256`, in the same
 style as core's `UInt8` … `UInt64`.
@@ -97,24 +97,24 @@ style as core's `UInt8` … `UInt64`.
 ## Usage examples
 
 ```lean
-import Endianness
+import Binary
 
 -- Big-endian encoding: 0xDEADBEEF → [222, 173, 190, 239]
-#eval Endianness.encodeBE 4 0xDEADBEEF
+#eval Binary.encodeBE 4 0xDEADBEEF
 
 -- Little-endian encoding: → [239, 190, 173, 222]
-#eval Endianness.encodeLE 4 0xDEADBEEF
+#eval Binary.encodeLE 4 0xDEADBEEF
 
 -- Big-endian decoding → 3735928559
-#eval Endianness.decodeBE [222, 173, 190, 239]
+#eval Binary.decodeBE [222, 173, 190, 239]
 
 -- Proving a concrete instance via the library theorem (no computation)
-example : Endianness.decodeBE (Endianness.encodeBE 4 0xDEADBEEF) = 0xDEADBEEF :=
-  Endianness.decodeBE_encodeBE (by decide)
+example : Binary.decodeBE (Binary.encodeBE 4 0xDEADBEEF) = 0xDEADBEEF :=
+  Binary.decodeBE_encodeBE (by decide)
 
 -- UInt256: 32-byte big-endian, roundtrip by theorem
-example : Endianness.UInt256.ofBEBytes (Endianness.UInt256.toBEBytes (42 : Endianness.UInt256)) = 42 :=
-  Endianness.UInt256.ofBEBytes_toBEBytes 42
+example : Binary.UInt256.ofBEBytes (Binary.UInt256.toBEBytes (42 : Binary.UInt256)) = 42 :=
+  Binary.UInt256.ofBEBytes_toBEBytes 42
 ```
 
 ## Using it as a dependency
@@ -123,11 +123,11 @@ Add to your `lakefile.toml`:
 
 ```toml
 [[require]]
-name = "endianness"
-path = "../endianness"
+name = "binary"
+path = "../binary"
 ```
 
-then `import Endianness`.
+then `import Binary`.
 
 ## Building and verifying
 
@@ -136,6 +136,6 @@ elan toolchain install leanprover/lean4:v4.32.0   # if not already installed
 lake build
 ```
 
-`Endianness/Examples.lean` prints real codec outputs via `#eval`, and several
+`Binary/Examples.lean` prints real codec outputs via `#eval`, and several
 `example`s verify concrete instances fully computationally with `decide` /
 `native_decide`.

@@ -1,7 +1,7 @@
-import Endianness.UInt8
+import Binary.UInt8
 
 /-!
-# Endianness.UInt256
+# Binary.UInt256
 
 A 256-bit unsigned integer type (the EVM word size), implemented as a wrapper
 around Lean core's `BitVec 256` — mirroring how `UInt8` … `UInt64` are
@@ -17,7 +17,7 @@ Contents:
   with the four roundtrip theorems.
 -/
 
-namespace Endianness
+namespace Binary
 
 /-- A 256-bit unsigned integer. Wrap-around semantics modulo `2^256`. -/
 structure UInt256 where
@@ -164,4 +164,4 @@ theorem toLEBytes_ofLEBytes {bs : List UInt8} (h : bs.length = byteSize) :
 
 end UInt256
 
-end Endianness
+end Binary

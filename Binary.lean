@@ -1,0 +1,20 @@
+import Binary.Core
+import Binary.UInt8
+import Binary.ByteArray
+import Binary.Fixed
+import Binary.UInt256
+import Binary.Examples
+
+/-!
+# Binary
+
+A big-endian / little-endian byte-order codec library with machine-checked
+proofs, written against the Lean 4 core library only (no mathlib dependency).
+
+* `Binary.Core` — codecs over `List Nat` byte strings and all core proofs
+* `Binary.UInt8` — the practical `List UInt8` interface with roundtrips
+* `Binary.ByteArray` — the `ByteArray` runtime interface with roundtrips
+* `Binary.Fixed` — fixed-width `UInt16` / `UInt32` / `UInt64` codecs
+* `Binary.UInt256` — a 256-bit unsigned integer (EVM word) with codecs
+* `Binary.Examples` — usage examples and computation-checked instances
+-/

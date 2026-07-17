@@ -1,18 +1,18 @@
-import Endianness.Core
-import Endianness.UInt8
-import Endianness.ByteArray
-import Endianness.Fixed
-import Endianness.UInt256
+import Binary.Core
+import Binary.UInt8
+import Binary.ByteArray
+import Binary.Fixed
+import Binary.UInt256
 
 /-!
-# Endianness.Examples
+# Binary.Examples
 
 Usage examples: numeric evaluation (`#eval`), property checking on concrete
 instances (`by decide` / `by native_decide`), and proofs that apply the
 library theorems directly.
 -/
 
-namespace Endianness
+namespace Binary
 
 -- Big-endian encoding of 0xDEADBEEF → [0xDE, 0xAD, 0xBE, 0xEF] = [222, 173, 190, 239]
 #eval encodeBE 4 0xDEADBEEF
@@ -75,4 +75,4 @@ example : UInt256.ofLEBytes (UInt256.toLEBytes (0x0102030405060708090A0B0C0D0E0F
 -- Wrap-around arithmetic inherited from BitVec 256: (2^256 - 1) + 1 = 0
 example : (UInt256.ofNat (2 ^ 256 - 1) + 1).toNat = 0 := by native_decide
 
-end Endianness
+end Binary

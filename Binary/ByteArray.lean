@@ -1,17 +1,17 @@
-import Endianness.UInt8
+import Binary.UInt8
 
 /-!
-# Endianness.ByteArray
+# Binary.ByteArray
 
 The `ByteArray` layer: codec interface over the runtime byte-string type
 used for actual I/O. Roundtrip properties are lifted directly from the
-`Endianness.UInt8` layer.
+`Binary.UInt8` layer.
 
 Conventions: encoding goes through `List.toByteArray`, decoding reads
 `ByteArray.data.toList`.
 -/
 
-namespace Endianness
+namespace Binary
 
 /-- Two `ByteArray`s with equal underlying data are equal. -/
 theorem ByteArray.data_inj {x y : ByteArray} (h : x.data = y.data) : x = y := by
@@ -83,4 +83,4 @@ theorem encodeBEBytes_decodeBEBytes_size (ba : ByteArray) :
   rw [ByteArray.size_eq_toList_length]
   exact encodeBEBytes_decodeBEBytes ba
 
-end Endianness
+end Binary

@@ -1,16 +1,16 @@
-import Endianness.Core
+import Binary.Core
 
 /-!
-# Endianness.UInt8
+# Binary.UInt8
 
-The `List UInt8` layer: lifts every roundtrip property of `Endianness.Core`
+The `List UInt8` layer: lifts every roundtrip property of `Binary.Core`
 to the practical `List UInt8` interface.
 
 The key bridging fact is that `UInt8.ofNat` and `UInt8.toNat` are mutually
 inverse on valid bytes.
 -/
 
-namespace Endianness
+namespace Binary
 
 /-- `UInt8.ofNat` is a left inverse of `UInt8.toNat`
     (not provided in this form by the core library). -/
@@ -126,4 +126,4 @@ theorem decodeBEU_lt (bs : List UInt8) : decodeBEU bs < 256 ^ bs.length := by
   have hlen : (uint8ToNats bs).length = bs.length := by simp [uint8ToNats]
   simpa [decodeBEU, hlen] using h
 
-end Endianness
+end Binary
