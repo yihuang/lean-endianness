@@ -3,6 +3,7 @@ import Endianness.UInt8
 import Endianness.ByteArray
 import Endianness.Fixed
 import Endianness.Minimal
+import Endianness.Signed
 import Endianness.UInt256
 import Endianness.Examples
 
@@ -17,6 +18,7 @@ proofs, written against the Lean 4 core library only (no mathlib dependency).
 * `Endianness.ByteArray` — the `ByteArray` runtime interface with roundtrips
 * `Endianness.Fixed` — fixed-width `UInt16` / `UInt32` / `UInt64` codecs
 * `Endianness.Minimal` — minimal-length big-endian codec (the EVM/ABI convention)
+* `Endianness.Signed` — two's-complement big-endian codec (signed EVM/ABI integers)
 * `Endianness.UInt256` — a 256-bit unsigned integer (EVM word) with codecs
 * `Endianness.Examples` — usage examples and computation-checked instances
 -/
