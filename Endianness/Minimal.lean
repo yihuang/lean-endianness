@@ -75,6 +75,23 @@ theorem minBytes_spec {n len : Nat} (hlen : 0 < len) : n < 256 ^ len ↔ minByte
   · intro h
     exact Nat.lt_of_lt_of_le (lt_pow_minBytes n) (Nat.pow_le_pow_right (by omega) h)
 
+/-- The exact width of `n` from a two-sided BYTE-length bound — the natural
+    characterisation: `n` takes `k` bytes exactly when `256^(k-1) <= n < 256^k`.
+
+    Prefer this to `minBytes_eq_of_range`, whose bit-length lower bound `2^(8k-1) <= n`
+    only covers values whose top byte has its high bit set (it cannot, for instance,
+    show `minBytes 256 = 2`). -/
+theorem minBytes_eq_of_byte_range {n k : Nat} (hk : 0 < k)
+    (hlo : 256 ^ (k - 1) <= n) (hhi : n < 256 ^ k) : minBytes n = k := by
+  have hup : minBytes n <= k := minBytes_le_of_lt hhi hk
+  rcases Nat.lt_or_ge (minBytes n) k with hlt | hge
+  · exfalso
+    have h1 : n < 256 ^ minBytes n := lt_pow_minBytes n
+    have h2 : (256 : Nat) ^ minBytes n <= 256 ^ (k - 1) :=
+      Nat.pow_le_pow_right (by omega) (by omega)
+    omega
+  · omega
+
 /-- The exact width of `n` from a two-sided bit-length bound. -/
 theorem minBytes_eq_of_range {n k : Nat} (hk : 0 < k)
     (hlo : 2 ^ (k * 8 - 1) ≤ n) (hhi : n < 2 ^ (k * 8)) : minBytes n = k := by

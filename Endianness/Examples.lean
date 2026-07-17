@@ -2,6 +2,8 @@ import Endianness.Core
 import Endianness.UInt8
 import Endianness.ByteArray
 import Endianness.Fixed
+import Endianness.Minimal
+import Endianness.Signed
 import Endianness.UInt256
 
 /-!
@@ -74,5 +76,59 @@ example : UInt256.ofLEBytes (UInt256.toLEBytes (0x0102030405060708090A0B0C0D0E0F
 
 -- Wrap-around arithmetic inherited from BitVec 256: (2^256 - 1) + 1 = 0
 example : (UInt256.ofNat (2 ^ 256 - 1) + 1).toNat = 0 := by native_decide
+
+/-! ## Minimal-length codec (`Endianness.Minimal`)
+
+The width is computed from the value rather than supplied. -/
+
+-- The shortest big-endian encoding: 0xDEADBEEF needs 4 bytes → [222, 173, 190, 239]
+#eval encodeBEMin 0xDEADBEEF
+
+-- Widths: 255 fits in one byte, 256 needs two
+#eval (minBytes 255, minBytes 256)
+
+-- Zero encodes as ONE zero byte (the EVM convention), not the empty string
+#eval encodeBEMin 0
+
+-- 32 bytes for a full EVM word, 33 once it overflows one
+#eval (minBytes (2 ^ 256 - 1), minBytes (2 ^ 256))
+
+-- The minimal encoding never has a leading zero byte — that is what "minimal" means
+example : (encodeBEMin 256).head! ≠ 0 := by decide
+
+-- Roundtrip needs NO hypothesis: the width is chosen to fit
+example : decodeBE (encodeBEMin 0xDEADBEEF) = 0xDEADBEEF := decodeBE_encodeBEMin _
+example : decodeBEBytes (encodeBEMinBytes 123456789) = 123456789 :=
+  decodeBEBytes_encodeBEMinBytes _
+
+-- Exact width by theorem, from the byte-range bound 256^(k-1) <= n < 256^k
+example : minBytes 256 = 2 := minBytes_eq_of_byte_range (by decide) (by decide) (by decide)
+example : minBytes 65535 = 2 := minBytes_eq_of_byte_range (by decide) (by decide) (by decide)
+
+/-! ## Two's-complement signed codec (`Endianness.Signed`) -/
+
+-- -1 in one byte → [255]; -2 in four → [255, 255, 255, 254]
+#eval encodeTwosBE 1 (-1)
+#eval encodeTwosBE 4 (-2)
+
+-- The sign boundary: -128 and 127 are the extremes of one byte
+#eval (encodeTwosBE 1 (-128), encodeTwosBE 1 127)
+
+-- Decoding reads the leading bit as the sign
+#eval (decodeTwosBE [128], decodeTwosBE [127], decodeTwosBE [255])
+
+-- -1 in an EVM word is 32 bytes of 0xFF
+#eval (encodeTwosBEBytes 32 (-1)).data.toList.all (fun b => b == 0xFF)
+
+-- Roundtrips on concrete instances, discharged by the Decidable instance
+example : decodeTwosBE (encodeTwosBE 4 (-2)) = -2 :=
+  decodeTwosBE_encodeTwosBE (by decide)
+example : decodeTwosBEBytes (encodeTwosBEBytes 32 (-12345)) = -12345 :=
+  decodeTwosBEBytes_encodeTwosBEBytes (by decide)
+
+-- `InTwosRange` is a REAL hypothesis: out of range the encoding wraps.
+-- 129 does not fit one signed byte, and comes back as -127.
+#eval decodeTwosBE (encodeTwosBE 1 129)
+example : ¬ InTwosRange 1 129 := by decide
 
 end Endianness

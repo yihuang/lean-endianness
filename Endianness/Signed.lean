@@ -37,6 +37,12 @@ def twosRep (len : Nat) (v : Int) : Nat :=
 def InTwosRange (len : Nat) (v : Int) : Prop :=
   -((256 ^ len : Nat) : Int) ≤ 2 * v ∧ 2 * v < ((256 ^ len : Nat) : Int)
 
+/-- Representability is decidable, so callers can discharge the roundtrips'
+    hypothesis with `by decide` on concrete values rather than building the
+    conjunction by hand. -/
+instance (len : Nat) (v : Int) : Decidable (InTwosRange len v) := by
+  unfold InTwosRange; infer_instance
+
 /-- In range, the representative fits in `len` bytes — what makes the unsigned
     encoder applicable. -/
 theorem twosRep_lt (len : Nat) (v : Int) (h : InTwosRange len v) :
