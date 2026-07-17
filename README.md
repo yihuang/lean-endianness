@@ -1,4 +1,4 @@
-# Endianness — a Lean 4 big-endian / little-endian byte-order codec library
+# Binary — a Lean 4 big-endian / little-endian byte-order codec library
 
 Endianness encoding/decoding with **machine-checked proofs** of all core
 properties — fixed-width, minimal-length, and two's-complement signed. Written
@@ -10,11 +10,11 @@ against the Lean 4 core library only — **no mathlib dependency**.
 ## Project layout
 
 ```
-endianness/
+binary/
 ├── lakefile.toml
 ├── lean-toolchain
-├── Endianness.lean            # root module (re-exports everything)
-└── Endianness/
+├── Binary.lean            # root module (re-exports everything)
+└── Binary/
     ├── Core.lean              # List Nat byte strings: codecs + all core proofs
     ├── UInt8.lean             # List UInt8 interface + roundtrips
     ├── ByteArray.lean         # ByteArray runtime interface + roundtrips
@@ -43,7 +43,7 @@ encoded), so roundtrip theorems take `n < 256^len` as their hypothesis.
 
 ## Theorem index
 
-### Core layer (`Endianness.Core`)
+### Core layer (`Binary.Core`)
 
 | Theorem | Statement |
 |---|---|
@@ -59,7 +59,7 @@ encoded), so roundtrip theorems take `n < 256^len` as their hypothesis.
 | `encodeBE_succ` | `encodeBE (len+1) n = encodeBE len (n/256) ++ [n%256]` |
 | `decodeBE_snoc` | `decodeBE (bs ++ [b]) = decodeBE bs * 256 + b` |
 
-### UInt8 layer (`Endianness.UInt8`)
+### UInt8 layer (`Binary.UInt8`)
 
 `encodeLEU/encodeBEU : Nat → Nat → List UInt8`, `decodeLEU/decodeBEU : List UInt8 → Nat`.
 Roundtrips: `decodeLEU_encodeLEU`, `decodeBEU_encodeBEU`, `encodeLEU_decodeLEU`,
@@ -67,14 +67,14 @@ Roundtrips: `decodeLEU_encodeLEU`, `decodeBEU_encodeBEU`, `encodeLEU_decodeLEU`,
 length lemmas (`@[simp]`). Bridging: `UInt8.ofNat_toNat`,
 `uint8ToNats_natsToUInt8`, `natsToUInt8_uint8ToNats`.
 
-### ByteArray layer (`Endianness.ByteArray`)
+### ByteArray layer (`Binary.ByteArray`)
 
 `encodeLEBytes/encodeBEBytes : Nat → Nat → ByteArray`, `decodeLEBytes/decodeBEBytes : ByteArray → Nat`.
 Roundtrips: `decodeLEBytes_encodeLEBytes`, `decodeBEBytes_encodeBEBytes`,
 `encodeLEBytes_decodeLEBytes_size`, `encodeBEBytes_decodeBEBytes_size`;
 `size_encodeLEBytes` / `size_encodeBEBytes` (`@[simp]`).
 
-### Fixed layer (`Endianness.Fixed`)
+### Fixed layer (`Binary.Fixed`)
 
 For each `T ∈ {UInt16, UInt32, UInt64}` (width `k ∈ {2, 4, 8}`):
 
@@ -83,7 +83,7 @@ For each `T ∈ {UInt16, UInt32, UInt64}` (width `k ∈ {2, 4, 8}`):
 - `T.toBEBytes_ofBEBytes` / `T.toLEBytes_ofLEBytes`: encode after decode, given `bs.length = k`
 - `T.length_toBEBytes` / `T.length_toLEBytes` (`@[simp]`)
 
-### Minimal layer (`Endianness.Minimal`)
+### Minimal layer (`Binary.Minimal`)
 
 The shortest byte string that decodes back to `n`, as opposed to the fixed-width
 codecs above where you supply the width. `0` encodes as a single `0x00`, matching the
@@ -106,7 +106,7 @@ EVM convention rather than the empty string.
 `minBytes_div` + `minBytes_eq_one` are what let a caller identify its own recursive
 width function with `minBytes` by plain induction.
 
-### Signed layer (`Endianness.Signed`)
+### Signed layer (`Binary.Signed`)
 
 Two's-complement big-endian, the convention signed EVM/ABI integers use. The encoding
 is the fixed-width unsigned one applied to `twosRep`, so the unsigned theory carries
@@ -115,7 +115,7 @@ over.
 | Theorem | Statement |
 |---|---|
 | `twosRep len v` | the unsigned representative: `v.toNat`, or `(256^len + v).toNat` when negative |
-| `InTwosRange len v` | `-256^len ≤ 2v < 256^len` — the usual `[-2^(8len-1), 2^(8len-1))`, stated without a truncating exponent |
+| `InTwosRange len v` | `-256^len ≤ 2v < 256^len` — the usual `[-2^(8len-1), 2^(8len-1))`, stated without a truncating exponent (`Decidable`, so `by decide` discharges it) |
 | `twosRep_lt` | in range, the representative fits in `len` bytes |
 | `decodeTwosBE_encodeTwosBE` (+ `U`/`Bytes`) | **roundtrip**, given `InTwosRange` |
 | `encodeTwosBE_injective` | injective on representable values |
@@ -125,7 +125,7 @@ over.
 `InTwosRange` is required, not decoration: out of range the encoding wraps —
 `decodeTwosBE (encodeTwosBE 1 129) = -127`.
 
-### UInt256 (`Endianness.UInt256`)
+### UInt256 (`Binary.UInt256`)
 
 A 256-bit unsigned integer (EVM word size) wrapping `BitVec 256`, in the same
 style as core's `UInt8` … `UInt64`.
@@ -143,40 +143,40 @@ style as core's `UInt8` … `UInt64`.
 ## Usage examples
 
 ```lean
-import Endianness
+import Binary
 
 -- Big-endian encoding: 0xDEADBEEF → [222, 173, 190, 239]
-#eval Endianness.encodeBE 4 0xDEADBEEF
+#eval Binary.encodeBE 4 0xDEADBEEF
 
 -- Little-endian encoding: → [239, 190, 173, 222]
-#eval Endianness.encodeLE 4 0xDEADBEEF
+#eval Binary.encodeLE 4 0xDEADBEEF
 
 -- Big-endian decoding → 3735928559
-#eval Endianness.decodeBE [222, 173, 190, 239]
+#eval Binary.decodeBE [222, 173, 190, 239]
 
 -- Proving a concrete instance via the library theorem (no computation)
-example : Endianness.decodeBE (Endianness.encodeBE 4 0xDEADBEEF) = 0xDEADBEEF :=
-  Endianness.decodeBE_encodeBE (by decide)
+example : Binary.decodeBE (Binary.encodeBE 4 0xDEADBEEF) = 0xDEADBEEF :=
+  Binary.decodeBE_encodeBE (by decide)
 
 -- Minimal-length: the width is computed, not supplied. 0xDEADBEEF → [222,173,190,239]
-#eval Endianness.encodeBEMin 0xDEADBEEF
-#eval (Endianness.minBytes 255, Endianness.minBytes 256)   -- → (1, 2)
+#eval Binary.encodeBEMin 0xDEADBEEF
+#eval (Binary.minBytes 255, Binary.minBytes 256)   -- → (1, 2)
 
 -- Minimal roundtrip needs NO hypothesis
-example : Endianness.decodeBE (Endianness.encodeBEMin 0xDEADBEEF) = 0xDEADBEEF :=
-  Endianness.decodeBE_encodeBEMin _
+example : Binary.decodeBE (Binary.encodeBEMin 0xDEADBEEF) = 0xDEADBEEF :=
+  Binary.decodeBE_encodeBEMin _
 
 -- Signed: two's complement. -1 in one byte → [255]; -2 in four → [255,255,255,254]
-#eval Endianness.encodeTwosBE 1 (-1)
-#eval Endianness.decodeTwosBE [128]   -- → -128
+#eval Binary.encodeTwosBE 1 (-1)
+#eval Binary.decodeTwosBE [128]   -- → -128
 
 -- Signed roundtrip, given representability
-example : Endianness.decodeTwosBE (Endianness.encodeTwosBE 4 (-2)) = -2 :=
-  Endianness.decodeTwosBE_encodeTwosBE (by decide)
+example : Binary.decodeTwosBE (Binary.encodeTwosBE 4 (-2)) = -2 :=
+  Binary.decodeTwosBE_encodeTwosBE (by decide)
 
 -- UInt256: 32-byte big-endian, roundtrip by theorem
-example : Endianness.UInt256.ofBEBytes (Endianness.UInt256.toBEBytes (42 : Endianness.UInt256)) = 42 :=
-  Endianness.UInt256.ofBEBytes_toBEBytes 42
+example : Binary.UInt256.ofBEBytes (Binary.UInt256.toBEBytes (42 : Binary.UInt256)) = 42 :=
+  Binary.UInt256.ofBEBytes_toBEBytes 42
 ```
 
 ## Using it as a dependency
@@ -185,11 +185,11 @@ Add to your `lakefile.toml`:
 
 ```toml
 [[require]]
-name = "endianness"
-path = "../endianness"
+name = "binary"
+path = "../binary"
 ```
 
-then `import Endianness`.
+then `import Binary`.
 
 ## Building and verifying
 
@@ -198,6 +198,6 @@ elan toolchain install leanprover/lean4:v4.32.0   # if not already installed
 lake build
 ```
 
-`Endianness/Examples.lean` prints real codec outputs via `#eval`, and several
+`Binary/Examples.lean` prints real codec outputs via `#eval`, and several
 `example`s verify concrete instances fully computationally with `decide` /
 `native_decide`.

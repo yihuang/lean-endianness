@@ -1,10 +1,10 @@
-import Endianness.ByteArray
+import Binary.ByteArray
 
 /-!
-# Endianness.Minimal
+# Binary.Minimal
 
 Minimal-length big-endian encoding: the shortest byte string that decodes back
-to `n`, as opposed to the fixed-width codecs of `Endianness.Core`.
+to `n`, as opposed to the fixed-width codecs of `Binary.Core`.
 
 This is the convention used for EVM/ABI integer encoding, where `0` is
 represented by a single zero byte rather than the empty string.
@@ -19,7 +19,7 @@ Everything is built on the fixed-width codecs at width `minBytes n`, so the
 fixed-width theory applies verbatim. Core library only — no mathlib.
 -/
 
-namespace Endianness
+namespace Binary
 
 /-! ## The minimal width -/
 
@@ -188,4 +188,4 @@ theorem encodeBEMin_injective {m n : Nat} (h : encodeBEMin m = encodeBEMin n) : 
   have := congrArg decodeBE h
   rwa [decodeBE_encodeBEMin, decodeBE_encodeBEMin] at this
 
-end Endianness
+end Binary

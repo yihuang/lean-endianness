@@ -1,6 +1,6 @@
-name = "endianness"
+name = "binary"
 version = "0.1.0"
-defaultTargets = ["Endianness"]
+defaultTargets = ["Binary"]
 
 [[lean_lib]]
-name = "Endianness"
+name = "Binary"

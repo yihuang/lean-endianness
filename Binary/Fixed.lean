@@ -1,7 +1,7 @@
-import Endianness.UInt8
+import Binary.UInt8
 
 /-!
-# Endianness.Fixed
+# Binary.Fixed
 
 Fixed-width integer (`UInt16` / `UInt32` / `UInt64`) endianness codecs,
 with four roundtrip theorems per type:
@@ -10,11 +10,11 @@ with four roundtrip theorems per type:
 * `toBEBytes_ofBEBytes` / `toLEBytes_ofLEBytes` — encode after decode
   (for inputs of exactly the right length)
 
-The interface is `List UInt8`, composing with the `Endianness.UInt8` and
-`Endianness.ByteArray` layers.
+The interface is `List UInt8`, composing with the `Binary.UInt8` and
+`Binary.ByteArray` layers.
 -/
 
-namespace Endianness
+namespace Binary
 
 /-! ## Width bounds and `ofNat ∘ toNat = id` -/
 
@@ -240,4 +240,4 @@ theorem UInt64.toLEBytes_ofLEBytes {bs : List UInt8} (h : bs.length = UInt64.byt
   rw [e, ← h]
   exact encodeLEU_decodeLEU bs
 
-end Endianness
+end Binary

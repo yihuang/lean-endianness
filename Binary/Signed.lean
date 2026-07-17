@@ -1,9 +1,9 @@
-import Endianness.ByteArray
+import Binary.ByteArray
 
 /-!
-# Endianness.Signed
+# Binary.Signed
 
-Two's-complement big-endian codecs — the signed counterpart to `Endianness.Core`'s
+Two's-complement big-endian codecs — the signed counterpart to `Binary.Core`'s
 unsigned fixed-width ones, and the convention EVM/ABI signed integers use.
 
 * `twosRep len v` — the unsigned representative of `v` in `len`-byte two's complement
@@ -22,7 +22,7 @@ Core library only — no mathlib. The `Int` arithmetic is discharged by `omega` 
 `Int.toNat_of_nonneg`.
 -/
 
-namespace Endianness
+namespace Binary
 
 /-! ## Representative and range -/
 
@@ -144,4 +144,4 @@ theorem encodeTwosBE_injective {len : Nat} {m n : Int}
   have := congrArg decodeTwosBE h
   rwa [decodeTwosBE_encodeTwosBE hm, decodeTwosBE_encodeTwosBE hn] at this
 
-end Endianness
+end Binary
