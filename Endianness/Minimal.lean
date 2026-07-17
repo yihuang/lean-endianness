@@ -90,6 +90,42 @@ theorem minBytes_eq_of_range {n k : Nat} (hk : 0 < k)
     omega
   · omega
 
+/-- `minBytes` obeys the base-256 recursion — derived from the minimality spec above,
+    with no `log2` reasoning. This is the shape a caller's own recursive width function
+    will have, so it is what lets such a function be identified with `minBytes`. -/
+theorem minBytes_div {n : Nat} (h : 256 ≤ n) : minBytes n = minBytes (n / 256) + 1 := by
+  have hdpos : 0 < minBytes (n / 256) := minBytes_pos _
+  apply Nat.le_antisymm
+  · have h1 : n / 256 < 256 ^ minBytes (n / 256) := lt_pow_minBytes _
+    have hp : (256 : Nat) ^ (minBytes (n / 256) + 1) = 256 * 256 ^ minBytes (n / 256) := by
+      rw [Nat.pow_succ]; omega
+    have hgoal : n < 256 ^ (minBytes (n / 256) + 1) := by omega
+    exact minBytes_le_of_lt hgoal (by omega)
+  · have hlt : n < 256 ^ minBytes n := lt_pow_minBytes n
+    have hpos := minBytes_pos n
+    have hk : 2 ≤ minBytes n := by
+      rcases Nat.lt_or_ge (minBytes n) 2 with hc | hc
+      · exfalso
+        have h1 : minBytes n = 1 := by omega
+        rw [h1, Nat.pow_one] at hlt
+        omega
+      · exact hc
+    obtain ⟨j, hj⟩ : ∃ j, minBytes n = j + 1 := ⟨minBytes n - 1, by omega⟩
+    rw [hj] at hlt
+    have hp : (256 : Nat) ^ (j + 1) = 256 * 256 ^ j := by rw [Nat.pow_succ]; omega
+    have hdiv : n / 256 < 256 ^ j := by omega
+    have hle := minBytes_le_of_lt hdiv (by omega)
+    omega
+
+/-- Below 256, one byte suffices — the recursion's base case. -/
+theorem minBytes_eq_one {n : Nat} (h : n < 256) : minBytes n = 1 := by
+  have hpos := minBytes_pos n
+  rcases Nat.lt_or_ge (minBytes n) 2 with hc | hc
+  · omega
+  · exfalso
+    have := minBytes_le_of_lt (show n < 256 ^ 1 by rw [Nat.pow_one]; omega) (by omega)
+    omega
+
 /-! ## The codecs -/
 
 /-- Minimal-length big-endian encoding over `List Nat`. -/
