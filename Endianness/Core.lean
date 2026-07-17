@@ -24,7 +24,7 @@ def IsBytes (bs : List Nat) : Prop := ∀ b ∈ bs, b < 256
 
 /-- Little-endian encoding of `n` into exactly `len` bytes, least significant
     byte first. Bits that do not fit are truncated (i.e. this encodes
-    `n mod 256^len`). -/
+    `n mod 256 ^ len`). -/
 def encodeLE : Nat → Nat → List Nat
   | 0,     _ => []
   | len+1, n => (n % 256) :: encodeLE len (n / 256)

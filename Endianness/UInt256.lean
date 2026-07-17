@@ -36,11 +36,14 @@ def toNat (x : UInt256) : Nat := x.toBitVec.toNat
 /-- The modulus `2^256`. -/
 def size : Nat := 2 ^ 256
 
+/-- The byte width of `UInt256` (the EVM word size). -/
+abbrev byteSize : Nat := 32
+
 /-! ## Bridge lemmas between `ofNat` and `toNat` -/
 
-theorem toNat_lt (x : UInt256) : x.toNat < 2 ^ 256 := x.toBitVec.isLt
+theorem toNat_lt (x : UInt256) : x.toNat < size := x.toBitVec.isLt
 
-theorem toNat_ofNat (n : Nat) : (ofNat n).toNat = n % 2 ^ 256 :=
+theorem toNat_ofNat (n : Nat) : (ofNat n).toNat = n % size :=
   BitVec.toNat_ofNat ..
 
 theorem toNat_inj {x y : UInt256} : x.toNat = y.toNat ↔ x = y := by
@@ -56,10 +59,10 @@ theorem ofNat_toNat (x : UInt256) : ofNat x.toNat = x := by
   apply toNat_inj.mp
   rw [toNat_ofNat, Nat.mod_eq_of_lt x.toNat_lt]
 
-/-- The bound in the `256 ^ 32` form used by the byte-codec layer. -/
-theorem toNat_lt_256 (x : UInt256) : x.toNat < 256 ^ 32 := by
+/-- The bound in the `256 ^ byteSize` form used by the byte-codec layer. -/
+theorem toNat_lt_256 (x : UInt256) : x.toNat < 256 ^ byteSize := by
   have h := x.toNat_lt
-  have e : (256 : Nat) ^ 32 = 2 ^ 256 := by decide
+  have e : 256 ^ byteSize = size := by decide
   rwa [e]
 
 /-! ## Basic instances -/
@@ -92,22 +95,22 @@ instance : Complement UInt256 := ⟨UInt256.not⟩
 instance : HShiftLeft UInt256 Nat UInt256 := ⟨UInt256.shiftLeft⟩
 instance : HShiftRight UInt256 Nat UInt256 := ⟨UInt256.shiftRight⟩
 
-theorem toNat_add (a b : UInt256) : (a + b).toNat = (a.toNat + b.toNat) % 2 ^ 256 :=
+theorem toNat_add (a b : UInt256) : (a + b).toNat = (a.toNat + b.toNat) % size :=
   BitVec.toNat_add ..
 
-theorem toNat_mul (a b : UInt256) : (a * b).toNat = (a.toNat * b.toNat) % 2 ^ 256 :=
+theorem toNat_mul (a b : UInt256) : (a * b).toNat = (a.toNat * b.toNat) % size :=
   BitVec.toNat_mul ..
 
-theorem toNat_sub (a b : UInt256) : (a - b).toNat = (2 ^ 256 - b.toNat + a.toNat) % 2 ^ 256 :=
+theorem toNat_sub (a b : UInt256) : (a - b).toNat = (size - b.toNat + a.toNat) % size :=
   BitVec.toNat_sub ..
 
-/-! ## Byte codec (32 bytes) -/
+/-! ## Byte codec (`byteSize` bytes) -/
 
-/-- `UInt256` → 32 big-endian bytes. -/
-def toBEBytes (x : UInt256) : List UInt8 := encodeBEU 32 x.toNat
+/-- `UInt256` → `byteSize` big-endian bytes. -/
+def toBEBytes (x : UInt256) : List UInt8 := encodeBEU byteSize x.toNat
 
-/-- `UInt256` → 32 little-endian bytes. -/
-def toLEBytes (x : UInt256) : List UInt8 := encodeLEU 32 x.toNat
+/-- `UInt256` → `byteSize` little-endian bytes. -/
+def toLEBytes (x : UInt256) : List UInt8 := encodeLEU byteSize x.toNat
 
 /-- Big-endian bytes → `UInt256` (the decoded value modulo `2^256`). -/
 def ofBEBytes (bs : List UInt8) : UInt256 := ofNat (decodeBEU bs)
@@ -115,26 +118,26 @@ def ofBEBytes (bs : List UInt8) : UInt256 := ofNat (decodeBEU bs)
 /-- Little-endian bytes → `UInt256`. -/
 def ofLEBytes (bs : List UInt8) : UInt256 := ofNat (decodeLEU bs)
 
-@[simp] theorem length_toBEBytes (x : UInt256) : (toBEBytes x).length = 32 := by
+@[simp] theorem length_toBEBytes (x : UInt256) : (toBEBytes x).length = byteSize := by
   simp [toBEBytes]
 
-@[simp] theorem length_toLEBytes (x : UInt256) : (toLEBytes x).length = 32 := by
+@[simp] theorem length_toLEBytes (x : UInt256) : (toLEBytes x).length = byteSize := by
   simp [toLEBytes]
 
 /-- **Roundtrip**: encoding a `UInt256` to big-endian bytes and decoding is the identity. -/
 theorem ofBEBytes_toBEBytes (x : UInt256) : ofBEBytes (toBEBytes x) = x := by
   have h := decodeBEU_encodeBEU (UInt256.toNat_lt_256 x)
-  show ofNat (decodeBEU (encodeBEU 32 x.toNat)) = x
+  show ofNat (decodeBEU (encodeBEU byteSize x.toNat)) = x
   rw [h, ofNat_toNat]
 
 /-- **Roundtrip**: encoding a `UInt256` to little-endian bytes and decoding is the identity. -/
 theorem ofLEBytes_toLEBytes (x : UInt256) : ofLEBytes (toLEBytes x) = x := by
   have h := decodeLEU_encodeLEU (UInt256.toNat_lt_256 x)
-  show ofNat (decodeLEU (encodeLEU 32 x.toNat)) = x
+  show ofNat (decodeLEU (encodeLEU byteSize x.toNat)) = x
   rw [h, ofNat_toNat]
 
-/-- **Roundtrip**: decoding exactly 32 big-endian bytes and re-encoding is the identity. -/
-theorem toBEBytes_ofBEBytes {bs : List UInt8} (h : bs.length = 32) :
+/-- **Roundtrip**: decoding exactly `byteSize` big-endian bytes and re-encoding is the identity. -/
+theorem toBEBytes_ofBEBytes {bs : List UInt8} (h : bs.length = byteSize) :
     toBEBytes (ofBEBytes bs) = bs := by
   have e : (ofBEBytes bs).toNat = decodeBEU bs := by
     show (ofNat (decodeBEU bs)).toNat = decodeBEU bs
@@ -142,12 +145,12 @@ theorem toBEBytes_ofBEBytes {bs : List UInt8} (h : bs.length = 32) :
     apply Nat.mod_eq_of_lt
     have hb := decodeBEU_lt bs
     rwa [h] at hb
-  show encodeBEU 32 (ofBEBytes bs).toNat = bs
+  show encodeBEU byteSize (ofBEBytes bs).toNat = bs
   rw [e, ← h]
   exact encodeBEU_decodeBEU bs
 
-/-- **Roundtrip**: decoding exactly 32 little-endian bytes and re-encoding is the identity. -/
-theorem toLEBytes_ofLEBytes {bs : List UInt8} (h : bs.length = 32) :
+/-- **Roundtrip**: decoding exactly `byteSize` little-endian bytes and re-encoding is the identity. -/
+theorem toLEBytes_ofLEBytes {bs : List UInt8} (h : bs.length = byteSize) :
     toLEBytes (ofLEBytes bs) = bs := by
   have e : (ofLEBytes bs).toNat = decodeLEU bs := by
     show (ofNat (decodeLEU bs)).toNat = decodeLEU bs
@@ -155,7 +158,7 @@ theorem toLEBytes_ofLEBytes {bs : List UInt8} (h : bs.length = 32) :
     apply Nat.mod_eq_of_lt
     have hb := decodeLEU_lt bs
     rwa [h] at hb
-  show encodeLEU 32 (ofLEBytes bs).toNat = bs
+  show encodeLEU byteSize (ofLEBytes bs).toNat = bs
   rw [e, ← h]
   exact encodeLEU_decodeLEU bs
 
