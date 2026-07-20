@@ -31,7 +31,7 @@ binary/
 | `UInt8` | `List UInt8` | practical interface; properties lifted from Core |
 | `ByteArray` | `ByteArray` | runtime I/O interface |
 | `Fixed` | `UInt16/32/64 ↔ List UInt8` | fixed-width codecs |
-| `UInt256` | `UInt256 ↔ List UInt8` | 256-bit word (EVM), wraps `BitVec 256` |
+| `UInt256` | `UInt256 ↔ List UInt8` / `ByteArray` | 256-bit word (EVM), wraps `BitVec 256` |
 
 Encoding semantics: `encodeBE len n` / `encodeLE len n` produce exactly `len`
 bytes; when `n ≥ 256^len` the value is truncated (i.e. `n mod 256^len` is
@@ -93,6 +93,16 @@ style as core's `UInt8` … `UInt64`.
 - Byte codec (32 bytes): `toBEBytes`, `toLEBytes`, `ofBEBytes`, `ofLEBytes`
 - Roundtrips: `ofBEBytes_toBEBytes`, `ofLEBytes_toLEBytes`,
   `toBEBytes_ofBEBytes` / `toLEBytes_ofLEBytes` (given `bs.length = 32`)
+- `ByteArray` codec (32 bytes): `toBEByteArray`, `toLEByteArray`,
+  `ofBEByteArray`, `ofLEByteArray`
+- Refinement lemmas: `toList_toBEByteArray` / `toList_toLEByteArray` and
+  `ofBEByteArray_eq_ofBEBytes` / `ofLEByteArray_eq_ofLEBytes` (the `ByteArray`
+  codec agrees with the `List UInt8` codec)
+- `ByteArray` roundtrips: `ofBEByteArray_toBEByteArray`,
+  `ofLEByteArray_toLEByteArray`, `toBEByteArray_ofBEByteArray` /
+  `toLEByteArray_ofLEByteArray` (given `ba.size = 32`),
+  `size_toBEByteArray` / `size_toLEByteArray` (`@[simp]`),
+  `toNat_ofBEByteArray_of_size` / `toNat_ofLEByteArray_of_size`
 
 ## Usage examples
 

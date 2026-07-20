@@ -75,4 +75,22 @@ example : UInt256.ofLEBytes (UInt256.toLEBytes (0x0102030405060708090A0B0C0D0E0F
 -- Wrap-around arithmetic inherited from BitVec 256: (2^256 - 1) + 1 = 0
 example : (UInt256.ofNat (2 ^ 256 - 1) + 1).toNat = 0 := by native_decide
 
+/-! ## UInt256 ↔ ByteArray (runtime I/O layer) -/
+
+-- 0xDEADBEEF as a 32-byte big-endian `ByteArray` (left-padded with zeros)
+#eval (UInt256.toBEByteArray 0xDEADBEEF).data.toList.map UInt8.toNat
+
+-- The `ByteArray` codec agrees with the `List UInt8` codec on concrete inputs
+example : (UInt256.toBEByteArray 0xDEADBEEF).data.toList =
+    UInt256.toBEBytes 0xDEADBEEF := by native_decide
+
+-- Roundtrip via the library theorem
+example : UInt256.ofBEByteArray (UInt256.toBEByteArray (42 : UInt256)) = 42 :=
+  UInt256.ofBEByteArray_toBEByteArray 42
+
+-- Roundtrip verified by native computation on a 256-bit value
+example : UInt256.ofLEByteArray (UInt256.toLEByteArray (0x0102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F20 : UInt256))
+    = 0x0102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F20 := by
+  native_decide
+
 end Binary
