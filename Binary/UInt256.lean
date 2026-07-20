@@ -1,4 +1,4 @@
-import Binary.UInt8
+import Binary.ByteArray
 
 /-!
 # Binary.UInt256
@@ -14,7 +14,10 @@ Contents:
   and wrap-around arithmetic / bitwise operations inherited from `BitVec 256`;
 * the bridge lemmas `toNat_lt`, `toNat_ofNat`, `toNat_inj`, `ofNat_toNat`;
 * the byte codec `toBEBytes` / `toLEBytes` / `ofBEBytes` / `ofLEBytes`
-  with the four roundtrip theorems.
+  with the four roundtrip theorems;
+* the `ByteArray` codec `toBEByteArray` / `toLEByteArray` / `ofBEByteArray` /
+  `ofLEByteArray` with refinement lemmas (agreement with the `List UInt8`
+  codec) and the four roundtrip theorems.
 -/
 
 namespace Binary
@@ -161,6 +164,100 @@ theorem toLEBytes_ofLEBytes {bs : List UInt8} (h : bs.length = byteSize) :
   show encodeLEU byteSize (ofLEBytes bs).toNat = bs
   rw [e, ← h]
   exact encodeLEU_decodeLEU bs
+
+/-! ## `ByteArray` codec (`byteSize` bytes, runtime I/O layer) -/
+
+/-- `UInt256` → `byteSize` big-endian bytes as a `ByteArray`. -/
+def toBEByteArray (x : UInt256) : ByteArray := encodeBEBytes byteSize x.toNat
+
+/-- `UInt256` → `byteSize` little-endian bytes as a `ByteArray`. -/
+def toLEByteArray (x : UInt256) : ByteArray := encodeLEBytes byteSize x.toNat
+
+/-- Big-endian `ByteArray` → `UInt256` (the decoded value modulo `2^256`). -/
+def ofBEByteArray (ba : ByteArray) : UInt256 := ofNat (decodeBEBytes ba)
+
+/-- Little-endian `ByteArray` → `UInt256`. -/
+def ofLEByteArray (ba : ByteArray) : UInt256 := ofNat (decodeLEBytes ba)
+
+/-- **Refinement**: the `ByteArray` encoder agrees with the `List UInt8` encoder. -/
+theorem toList_toBEByteArray (x : UInt256) :
+    (toBEByteArray x).data.toList = toBEBytes x := by
+  simp only [toBEByteArray, encodeBEBytes, toBEBytes, List.data_toByteArray,
+    List.toList_toArray]
+
+/-- **Refinement**: the `ByteArray` encoder agrees with the `List UInt8` encoder
+    (little-endian). -/
+theorem toList_toLEByteArray (x : UInt256) :
+    (toLEByteArray x).data.toList = toLEBytes x := by
+  simp only [toLEByteArray, encodeLEBytes, toLEBytes, List.data_toByteArray,
+    List.toList_toArray]
+
+/-- **Refinement**: the `ByteArray` decoder agrees with the `List UInt8` decoder. -/
+theorem ofBEByteArray_eq_ofBEBytes (ba : ByteArray) :
+    ofBEByteArray ba = ofBEBytes ba.data.toList := rfl
+
+/-- **Refinement**: the `ByteArray` decoder agrees with the `List UInt8` decoder
+    (little-endian). -/
+theorem ofLEByteArray_eq_ofLEBytes (ba : ByteArray) :
+    ofLEByteArray ba = ofLEBytes ba.data.toList := rfl
+
+@[simp] theorem size_toBEByteArray (x : UInt256) : (toBEByteArray x).size = byteSize := by
+  simp only [toBEByteArray, size_encodeBEBytes]
+
+@[simp] theorem size_toLEByteArray (x : UInt256) : (toLEByteArray x).size = byteSize := by
+  simp only [toLEByteArray, size_encodeLEBytes]
+
+/-- The value decoded from a `byteSize`-wide big-endian `ByteArray`, as a natural. -/
+theorem toNat_ofBEByteArray_of_size {ba : ByteArray} (h : ba.size = byteSize) :
+    (ofBEByteArray ba).toNat = decodeBEBytes ba := by
+  have hlen : ba.data.toList.length = byteSize := by
+    rw [← ByteArray.size_eq_toList_length]; exact h
+  have hb := decodeBEU_lt ba.data.toList
+  rw [hlen] at hb
+  have e : 256 ^ byteSize = size := by decide
+  rw [e] at hb
+  show (ofNat (decodeBEU ba.data.toList)).toNat = decodeBEU ba.data.toList
+  rw [toNat_ofNat, Nat.mod_eq_of_lt hb]
+
+/-- The value decoded from a `byteSize`-wide little-endian `ByteArray`, as a natural. -/
+theorem toNat_ofLEByteArray_of_size {ba : ByteArray} (h : ba.size = byteSize) :
+    (ofLEByteArray ba).toNat = decodeLEBytes ba := by
+  have hlen : ba.data.toList.length = byteSize := by
+    rw [← ByteArray.size_eq_toList_length]; exact h
+  have hb := decodeLEU_lt ba.data.toList
+  rw [hlen] at hb
+  have e : 256 ^ byteSize = size := by decide
+  rw [e] at hb
+  show (ofNat (decodeLEU ba.data.toList)).toNat = decodeLEU ba.data.toList
+  rw [toNat_ofNat, Nat.mod_eq_of_lt hb]
+
+/-- **Roundtrip**: encoding a `UInt256` to a big-endian `ByteArray` and decoding
+    is the identity. -/
+theorem ofBEByteArray_toBEByteArray (x : UInt256) :
+    ofBEByteArray (toBEByteArray x) = x := by
+  rw [ofBEByteArray_eq_ofBEBytes, toList_toBEByteArray, ofBEBytes_toBEBytes]
+
+/-- **Roundtrip**: encoding a `UInt256` to a little-endian `ByteArray` and decoding
+    is the identity. -/
+theorem ofLEByteArray_toLEByteArray (x : UInt256) :
+    ofLEByteArray (toLEByteArray x) = x := by
+  rw [ofLEByteArray_eq_ofLEBytes, toList_toLEByteArray, ofLEBytes_toLEBytes]
+
+/-- **Roundtrip**: decoding a `byteSize`-wide big-endian `ByteArray` and re-encoding
+    is the identity. -/
+theorem toBEByteArray_ofBEByteArray {ba : ByteArray} (h : ba.size = byteSize) :
+    toBEByteArray (ofBEByteArray ba) = ba := by
+  show encodeBEBytes byteSize (ofBEByteArray ba).toNat = ba
+  rw [toNat_ofBEByteArray_of_size h, ← h]
+  exact encodeBEBytes_decodeBEBytes_size ba
+
+/-- **Roundtrip**: decoding a `byteSize`-wide little-endian `ByteArray` and
+    re-encoding is the identity. -/
+theorem toLEByteArray_ofLEByteArray {ba : ByteArray} (h : ba.size = byteSize) :
+    toLEByteArray (ofLEByteArray ba) = ba := by
+  show encodeLEBytes byteSize (ofLEByteArray ba).toNat = ba
+  rw [toNat_ofLEByteArray_of_size h, ← h]
+  exact encodeLEBytes_decodeLEBytes_size ba
 
 end UInt256
 
